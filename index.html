@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask dApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h1>MetaMask Wallet Connection</h1>
+    <p id="walletAddress">Not connected</p>
+    <input type="text" id="wordInput" placeholder="Enter new word">
+    <button onclick="addWord()">Add Word</button>
+    <button onclick="loadWords()">Load Words</button>
+    <ul id="words"></ul>
+
+    <script>
+        let contract;
+        const contractAddress = "0x200caa62af8c1648de2b1fa6e6af9416c3bec735";
+        const abi = [{
+	"inputs": [
+		{
+			"internalType": "string",
+			"name": "newWord",
+			"type": "string"
+		}
+	],
+	"name": "addWord",
+	"outputs": [],
+	"stateMutability": "nonpayable",
+	"type": "function"
+},
+{
+	"inputs": [],
+	"stateMutability": "nonpayable",
+	"type": "constructor"
+},
+{
+	"inputs": [
+		{
+			"internalType": "uint256",
+			"name": "index",
+			"type": "uint256"
+		}
+	],
+	"name": "getWord",
+	"outputs": [
+		{
+			"internalType": "string",
+			"name": "",
+			"type": "string"
+		}
+	],
+	"stateMutability": "view",
+	"type": "function"
+},
+{
+	"inputs": [],
+	"name": "getWordCount",
+	"outputs": [
+		{
+			"internalType": "uint256",
+			"name": "",
+			"type": "uint256"
+		}
+	],
+	"stateMutability": "view",
+	"type": "function"
+},
+{
+	"inputs": [],
+	"name": "owner",
+	"outputs": [
+		{
+			"internalType": "address",
+			"name": "",
+			"type": "address"
+		}
+	],
+	"stateMutability": "view",
+	"type": "function"
+},
+{
+	"inputs": [
+		{
+			"internalType": "uint256",
+			"name": "",
+			"type": "uint256"
+		}
+	],
+	"name": "words",
+	"outputs": [
+		{
+			"internalType": "string",
+			"name": "",
+			"type": "string"
+		}
+	],
+	"stateMutability": "view",
+	"type": "function"
+}];
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, abi, signer);
+                    const address = await signer.getAddress();
+                    document.getElementById("walletAddress").innerText = "Connected: " + address;
+                } catch (error) {
+                    console.error("Error connecting to MetaMask:", error);
+                }
+            } else {
+                alert("MetaMask not found. Please install MetaMask!");
+                if (/Mobi|Android/i.test(navigator.userAgent)) {
+                    window.open("https://metamask.app.link/dapp/https://love-chain.vercel.app/");
+                }
+            }
+        }
+
+        async function addWord() {
+            const word = document.getElementById("wordInput").value;
+            try {
+                const tx = await contract.addWord(word);
+                await tx.wait(); 
+                alert("Word added successfully!");
+            } catch (error) {
+                console.error("Error adding word:", error);
+            }
+        }
+
+        async function loadWords() {
+            try {
+                const wordCount = await contract.getWordCount();
+                let wordsList = "";
+                for (let i = 0; i < wordCount; i++) {
+                    const word = await contract.getWord(i);
+                    wordsList += `<li>${word}</li>`;
+                }
+                document.getElementById("words").innerHTML = wordsList;
+            } catch (error) {
+                console.error("Error loading words:", error);
+            }
+        }
+
+        window.onload = () => {
+            connectWallet();
+        };
+    </script>
+</body>
+</html>
